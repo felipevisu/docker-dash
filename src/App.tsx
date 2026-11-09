@@ -1,6 +1,6 @@
 // @ts-nocheck
-// Preview no navegador (bun run preview): sempre com dados simulados,
-// já que o navegador não pode chamar os CLIs do Docker/Podman.
+// Browser preview (bun run preview): always uses mock data,
+// since the browser can't call the Docker/Podman CLIs.
 import { TUI } from "@gridland/web"
 import { Root } from "./Root"
 import { mockBackend, mockDetect } from "./backend/mock"

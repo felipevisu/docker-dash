@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Dashboard de terminal para Colima + Docker, feito com Gridland",
+  "description": "Terminal dashboard for Docker (Colima) and Podman, built with Gridland",
   "bin": {
     "docker-dash": "src/cli.tsx"
   },

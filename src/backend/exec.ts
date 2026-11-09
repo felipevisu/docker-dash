@@ -1,5 +1,5 @@
-// Execução de comandos compartilhada pelos backends reais.
-// Sempre execFile com argv em array: nada passa por shell.
+// Command execution shared by the real backends.
+// Always execFile with an argv array: nothing goes through a shell.
 import { execFile, spawn } from "node:child_process"
 
 export interface RunResult { stdout: string; stderr: string }
@@ -10,16 +10,16 @@ export function run(cmd: string, args: string[], timeout = 30_000): Promise<RunR
       if (err) {
         const code = (err as any).code
         let message: string
-        if (code === "ENOENT") message = `comando "${cmd}" não encontrado no PATH`
-        else if ((err as any).killed) message = `"${cmd} ${args[0]}" demorou demais (timeout)`
+        if (code === "ENOENT") message = `command "${cmd}" not found in PATH`
+        else if ((err as any).killed) message = `"${cmd} ${args[0]}" took too long (timeout)`
         else message = (String(stderr || "").trim().split("\n").filter(Boolean).pop() ?? err.message).trim()
-        reject(new Error(message || `${cmd} falhou`))
+        reject(new Error(message || `${cmd} failed`))
       } else resolve({ stdout: String(stdout), stderr: String(stderr) })
     })
   })
 }
 
-/** Aceita um array JSON ou um objeto JSON por linha (formato `{{json .}}`) */
+/** Accepts a JSON array or one JSON object per line (`{{json .}}` format) */
 export function jsonLines(s: string): any[] {
   const t = s.trim()
   if (!t || t === "null") return []
@@ -33,13 +33,13 @@ export function jsonLines(s: string): any[] {
 
 export const lastLine = (s: string) => s.trim().split("\n").filter(Boolean).pop() ?? ""
 
-/** Primeiro campo existente entre vários nomes possíveis (formatos mudam entre versões) */
+/** First existing field among several possible names (formats change between versions) */
 export function pick(o: any, ...keys: string[]): any {
   for (const k of keys) if (o?.[k] !== undefined && o?.[k] !== null) return o[k]
   return undefined
 }
 
-/** "há quanto tempo", a partir de um timestamp unix (s) ou data ISO */
+/** "how long ago", from a unix timestamp (s) or ISO date */
 export function ago(t: number | string | undefined): string {
   if (t === undefined || t === null || t === "") return ""
   const ms = typeof t === "number" ? (t < 1e12 ? t * 1000 : t) : Date.parse(t)
@@ -59,7 +59,7 @@ export function exitCodeOf(status: string): number | null {
   return m ? Number(m[1]) : null
 }
 
-/** projeto compose a partir dos labels (string "k=v,k=v" do docker ou objeto do podman) */
+/** compose project from labels ("k=v,k=v" string from docker or object from podman) */
 export function composeProject(labels: any): string | undefined {
   if (!labels) return undefined
   if (typeof labels === "string") {
@@ -69,7 +69,7 @@ export function composeProject(labels: any): string | undefined {
   return labels["com.docker.compose.project"] ?? labels["io.podman.compose.project"]
 }
 
-/** executa `cli <args...> <id>` para cada id, sem parar no primeiro erro */
+/** runs `cli <args...> <id>` for each id, without stopping at the first error */
 export async function removeEach(cli: string, args: string[], ids: string[]) {
   const removed: string[] = []
   const failed: { id: string; error: string }[] = []
@@ -84,7 +84,7 @@ export async function removeEach(cli: string, args: string[], ids: string[]) {
   return { removed, failed }
 }
 
-/** Copia texto para o clipboard do macOS */
+/** Copies text to the macOS clipboard */
 export function copyToClipboard(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const p = spawn("pbcopy")
@@ -94,20 +94,20 @@ export function copyToClipboard(text: string): Promise<void> {
   })
 }
 
-/** Detecta Docker e Podman (instalado? rodando?) em paralelo, com timeouts curtos */
+/** Detects Docker and Podman (installed? running?) in parallel, with short timeouts */
 export async function detectEngines(): Promise<import("./types").EngineInfo[]> {
   const docker = (async () => {
     const info = { engine: "docker" as const, installed: false, running: false, version: "", detail: "" }
     try {
       info.version = (await run("docker", ["--version"], 4000)).stdout.trim().replace(/^Docker version\s*/i, "").split(",")[0]
       info.installed = true
-    } catch { info.detail = "docker não encontrado (brew install docker colima)"; return info }
+    } catch { info.detail = "docker not found (brew install docker colima)"; return info }
     try {
       const v = (await run("docker", ["info", "--format", "{{.ServerVersion}}"], 5000)).stdout.trim()
       info.running = true
-      info.detail = `servidor ${v}`
+      info.detail = `server ${v}`
     } catch {
-      info.detail = "daemon parado (Colima desligado?)"
+      info.detail = "daemon stopped (Colima off?)"
     }
     return info
   })()
@@ -116,14 +116,14 @@ export async function detectEngines(): Promise<import("./types").EngineInfo[]> {
     try {
       info.version = (await run("podman", ["--version"], 4000)).stdout.trim().replace(/^podman version\s*/i, "")
       info.installed = true
-    } catch { info.detail = "podman não encontrado (brew install podman)"; return info }
+    } catch { info.detail = "podman not found (brew install podman)"; return info }
     try {
       const machines = jsonLines((await run("podman", ["machine", "list", "--format", "json"], 5000)).stdout)
       const up = machines.find((m) => m.Running)
       info.running = !!up
-      info.detail = up ? `máquina ${up.Name} rodando` : machines.length ? "máquina parada" : "nenhuma máquina (podman machine init)"
+      info.detail = up ? `machine ${up.Name} running` : machines.length ? "machine stopped" : "no machines (podman machine init)"
     } catch {
-      info.detail = "não consegui listar as máquinas"
+      info.detail = "couldn't list machines"
     }
     return info
   })()

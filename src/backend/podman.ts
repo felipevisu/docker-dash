@@ -1,14 +1,14 @@
-// Backend Podman + podman machine.
-// O CLI do Podman é quase igual ao do Docker, mas o JSON muda: `--format json` devolve arrays,
-// nomes vêm em listas, portas são objetos, tamanhos vêm em bytes e o stats usa snake_case.
-// Por isso convertemos tudo para os mesmos tipos usados pela UI.
+// Podman + podman machine backend.
+// Podman's CLI is nearly the same as Docker's, but the JSON differs: `--format json` returns arrays,
+// names come in lists, ports are objects, sizes are in bytes and stats uses snake_case.
+// So we convert everything to the same types the UI uses.
 import type { Backend, Machine, Container, Image, Stat, Volume, DiskUsage, PruneKind } from "./types"
 import { parsePair, parseSize, clean } from "../lib/format"
 import { run, jsonLines, lastLine, pick, ago, copyToClipboard, exitCodeOf, composeProject, removeEach } from "./exec"
 
 const short = (id: string) => String(id ?? "").replace(/^sha256:/, "").slice(0, 12)
 
-/** portas do Podman → mesmo texto do `docker ps` ("0.0.0.0:8080->80/tcp"), para reaproveitar o parser */
+/** Podman ports → same text as `docker ps` ("0.0.0.0:8080->80/tcp"), to reuse the parser */
 function portsToString(ports: any): string {
   if (!ports) return ""
   if (typeof ports === "string") return ports
@@ -58,7 +58,7 @@ export function podmanBackend(): Backend {
         cpus: Number(pick(m, "CPUs", "Cpus") ?? 0),
         memory: bytesOf(m.Memory),
         disk: bytesOf(pick(m, "DiskSize", "Disk")),
-        runtime: `podman${m.VMType ? ` · ${m.VMType}` : ""}${m.Default ? " · padrão" : ""}`,
+        runtime: `podman${m.VMType ? ` · ${m.VMType}` : ""}${m.Default ? " · default" : ""}`,
         address: m.Port ? `ssh :${m.Port}` : "",
       }))
     },
@@ -86,7 +86,7 @@ export function podmanBackend(): Backend {
       try {
         stdout = (await podman(["stats", "--no-stream", "--no-reset", "--format", "json"], 20_000)).stdout
       } catch (e: any) {
-        // versões antigas não têm --no-reset; e sem containers rodando o podman pode reclamar
+        // old versions lack --no-reset; and with no running containers podman may complain
         if (/no-reset/.test(e.message)) stdout = (await podman(["stats", "--no-stream", "--format", "json"], 20_000)).stdout
         else if (/no (running )?containers/i.test(e.message)) return []
         else throw e
@@ -131,7 +131,7 @@ export function podmanBackend(): Backend {
         mountpoint: v.Mountpoint ?? "",
         users: [],
       }))
-      // `podman ps` não diz quais volumes cada container usa; o inspect diz (uma chamada para todos)
+      // `podman ps` doesn't say which volumes each container uses; inspect does (one call for all)
       try {
         const idList = (await podman(["ps", "-aq"])).stdout.split("\n").map((s) => s.trim()).filter(Boolean)
         if (idList.length) {
@@ -144,7 +144,7 @@ export function podmanBackend(): Backend {
           for (const v of vols) v.users = byVol[v.name] ?? []
         }
       } catch {
-        for (const v of vols) delete v.users // sem a informação, a UI usa o fallback
+        for (const v of vols) delete v.users // without the info, the UI uses the fallback
       }
       return vols
     },
@@ -180,7 +180,7 @@ export function podmanBackend(): Backend {
       return lastLine(stdout)
     },
 
-    // sem -f de propósito: um container rodando (ou imagem em uso) falha em vez de ser removido
+    // no -f on purpose: a running container (or image in use) fails instead of being removed
     removeContainers: (ids) => removeEach("podman", ["rm"], ids),
     removeImages: (ids) => removeEach("podman", ["rmi"], ids),
 
@@ -198,10 +198,10 @@ export function podmanBackend(): Backend {
         networks: ["network", "prune", "-f"],
         system: ["system", "prune", "-f"],
       }
-      if (!args[kind]) throw new Error(`"${kind} prune" não existe no Podman`)
+      if (!args[kind]) throw new Error(`"${kind} prune" doesn't exist in Podman`)
       const { stdout } = await podman(args[kind]!, 10 * 60_000)
       const lines = stdout.trim().split("\n").filter(Boolean)
-      return lines.length > 1 ? `${lines.length} itens removidos` : lastLine(stdout)
+      return lines.length > 1 ? `${lines.length} items removed` : lastLine(stdout)
     },
 
     async pull(ref) {
@@ -214,7 +214,7 @@ export function podmanBackend(): Backend {
       if (action === "restart") {
         await podman(["machine", "stop", name], timeout).catch(() => {})
         await podman(["machine", "start", name], timeout)
-        return "reiniciada"
+        return "restarted"
       }
       const { stdout, stderr } = await podman(["machine", action, name], timeout)
       return lastLine(stdout || stderr)

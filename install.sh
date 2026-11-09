@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Instala o comando `docker-dash`.
-#   1. instala o Bun se ele não existir (só para compilar)
-#   2. compila um binário único (não depende de Bun/Node para rodar)
-#   3. copia para ~/.local/bin (ou PREFIX/bin) e garante que a pasta está no PATH
+# Installs the `docker-dash` command.
+#   1. installs Bun if it's missing (only needed to compile)
+#   2. compiles a single binary (doesn't need Bun/Node to run)
+#   3. copies it to ~/.local/bin (or PREFIX/bin) and makes sure that folder is in PATH
 #
-# Uso:  ./install.sh                 (instala em ~/.local/bin)
-#       PREFIX=/usr/local ./install.sh
+# Usage: ./install.sh                (installs to ~/.local/bin)
+#        PREFIX=/usr/local ./install.sh
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -21,24 +21,24 @@ warn() { printf "\033[33m!\033[0m %s\n" "$*"; }
 export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
 export PATH="$BUN_INSTALL/bin:$PATH"
 if ! command -v bun >/dev/null 2>&1; then
-  bold "Instalando o Bun (necessário só para compilar)…"
+  bold "Installing Bun (only needed to compile)…"
   curl -fsSL https://bun.sh/install | bash
 fi
 ok "bun $(bun --version)"
 
-# 2) dependências + compilação
-bold "Instalando dependências…"
+# 2) dependencies + compile
+bold "Installing dependencies…"
 bun install --frozen-lockfile 2>/dev/null || bun install
-bold "Compilando o binário…"
+bold "Compiling the binary…"
 mkdir -p build
 bun build --compile --minify src/cli.tsx --outfile "build/$NAME"
 ok "build/$NAME ($(du -h "build/$NAME" | cut -f1))"
 
-# 3) instalação
+# 3) install
 mkdir -p "$BIN_DIR"
 cp "build/$NAME" "$BIN_DIR/$NAME"
 chmod +x "$BIN_DIR/$NAME"
-ok "instalado em $BIN_DIR/$NAME"
+ok "installed to $BIN_DIR/$NAME"
 
 # 4) PATH
 case ":$PATH:" in
@@ -53,15 +53,15 @@ case ":$PATH:" in
     LINE="export PATH=\"$BIN_DIR:\$PATH\""
     if ! grep -qsF "$LINE" "$RC"; then
       printf '\n# docker-dash\n%s\n' "$LINE" >> "$RC"
-      ok "adicionei $BIN_DIR ao PATH em $RC"
+      ok "added $BIN_DIR to PATH in $RC"
     fi
-    warn "abra um novo terminal (ou rode: source $RC) para o comando funcionar"
+    warn "open a new terminal (or run: source $RC) for the command to work"
     ;;
 esac
 
-# 5) avisos sobre dependências em tempo de execução
-command -v colima >/dev/null 2>&1 || [ -x /opt/homebrew/bin/colima ] || warn "colima não encontrado (brew install colima)"
-command -v docker >/dev/null 2>&1 || [ -x /opt/homebrew/bin/docker ] || warn "docker CLI não encontrado (brew install docker)"
+# 5) warnings about runtime dependencies
+command -v colima >/dev/null 2>&1 || [ -x /opt/homebrew/bin/colima ] || warn "colima not found (brew install colima)"
+command -v docker >/dev/null 2>&1 || [ -x /opt/homebrew/bin/docker ] || warn "docker CLI not found (brew install docker)"
 
 echo
-bold "Pronto! Digite: $NAME"
+bold "Done! Type: $NAME"

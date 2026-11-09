@@ -1,4 +1,4 @@
-// Helpers de formatação e parsing (tamanhos, portas, tabelas, sparklines).
+// Formatting and parsing helpers (sizes, ports, tables, sparklines).
 
 const UNITS: Record<string, number> = {
   b: 1, kb: 1e3, mb: 1e6, gb: 1e9, tb: 1e12,
@@ -26,17 +26,17 @@ export function fmtBytes(n: number, digits = 1): string {
   return `${n.toFixed(i === 0 ? 0 : n >= 100 ? 0 : digits)}${u[i]}`
 }
 
-// Sequências ANSI (CSI, OSC, ESC simples) e caracteres de controle. Logs de containers
-// costumam trazer cores e movimentos de cursor; se chegarem ao terminal, quebram o layout.
+// ANSI sequences (CSI, OSC, plain ESC) and control characters. Container logs
+// often carry colors and cursor moves; if they reach the terminal, they break the layout.
 const ANSI_RE = /\x1b\[[0-?]*[ -\/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|\x1b[PX^_][^\x1b]*\x1b\\|\x1b[@-Z\\-_]|\x9b[0-?]*[ -\/]*[@-~]/g
 const CTRL_RE = /[\x00-\x08\x0b-\x1f\x7f-\x9f]/g
 
-/** remove cores/controles e troca tab por espaços */
+/** strips colors/controls and replaces tabs with spaces */
 export function clean(s: string): string {
   return String(s ?? "").replace(ANSI_RE, "").replace(/\t/g, "  ").replace(CTRL_RE, "")
 }
 
-/** largura de um caractere no terminal (0, 1 ou 2 colunas) */
+/** terminal width of a character (0, 1 or 2 columns) */
 function charWidth(cp: number): number {
   if (cp === 0x200b || cp === 0x200c || cp === 0x200d || cp === 0xfe0f || cp === 0xfe0e) return 0
   if ((cp >= 0x300 && cp <= 0x36f) || (cp >= 0x1ab0 && cp <= 0x1aff) || (cp >= 0x20d0 && cp <= 0x20ff)) return 0
@@ -55,7 +55,7 @@ export function strWidth(s: string): number {
   return w
 }
 
-/** corta pelo número de COLUNAS (não de caracteres), limpando ANSI antes */
+/** truncates by COLUMNS (not characters), stripping ANSI first */
 export function trunc(s: string, w: number): string {
   s = clean(s)
   if (w <= 0) return ""
@@ -81,7 +81,7 @@ export const padL = (s: string, w: number) => {
 
 export interface PortMap { host: number; container: number; proto: string }
 
-/** "0.0.0.0:5432->5432/tcp, :::5432->5432/tcp, 6379/tcp" → portas publicadas (sem duplicar IPv4/IPv6) */
+/** "0.0.0.0:5432->5432/tcp, :::5432->5432/tcp, 6379/tcp" → published ports (no IPv4/IPv6 duplicates) */
 export function parsePorts(s?: string): PortMap[] {
   const out: PortMap[] = []
   const seen = new Set<string>()
@@ -101,7 +101,7 @@ export function fmtPorts(s?: string): string {
 }
 
 const SPARK = "▁▂▃▄▅▆▇█"
-/** Sparkline com as últimas `width` amostras. `max` fixo opcional (ex.: 100 para %). */
+/** Sparkline of the last `width` samples. Optional fixed `max` (e.g. 100 for %). */
 export function spark(values: number[], width: number, max?: number): string {
   const v = values.slice(-width)
   const top = max ?? Math.max(1e-9, ...v)
@@ -109,7 +109,7 @@ export function spark(values: number[], width: number, max?: number): string {
   return s.padStart(width, " ")
 }
 
-/** Barra horizontal de progresso */
+/** Horizontal progress bar */
 export function bar(frac: number, width: number): [string, string] {
   const f = Math.max(0, Math.min(1, frac || 0))
   const n = Math.round(f * width)
@@ -118,7 +118,7 @@ export function bar(frac: number, width: number): [string, string] {
 
 export const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
 
-/** Índice inicial da janela visível para manter `sel` na tela */
+/** Start index of the visible window that keeps `sel` on screen */
 export function scrollStart(sel: number, len: number, rows: number) {
   if (len <= rows) return 0
   return clamp(sel - Math.floor(rows / 2), 0, len - rows)

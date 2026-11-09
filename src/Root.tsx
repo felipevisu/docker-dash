@@ -1,6 +1,6 @@
 // @ts-nocheck
-// Raiz do app: escolhe o motor (Docker/Colima ou Podman) e depois abre o dashboard.
-// Pode pular a escolha com --docker / --podman. Dentro do dashboard, E volta para cá.
+// App root: picks the engine (Docker/Colima or Podman), then opens the dashboard.
+// The picker can be skipped with --docker / --podman. Inside the dashboard, E comes back here.
 import { useEffect, useRef, useState } from "react"
 import { useKeyboard, useTerminalDimensions } from "@gridland/utils"
 import type { Backend, Engine, EngineInfo } from "./backend/types"
@@ -52,7 +52,7 @@ function EnginePicker({ detect, preferred, onPick, onExit }) {
     setInfos(null)
     detect().then((list) => {
       setInfos(list)
-      // sem escolha anterior: pré-seleciona o motor que está rodando
+      // no previous choice: preselect the engine that's running
       if (!touched.current && !preferred) {
         const i = OPTIONS.findIndex((o) => list.find((x) => x.engine === o.engine)?.running)
         if (i >= 0) setSel(i)
@@ -80,18 +80,18 @@ function EnginePicker({ detect, preferred, onPick, onExit }) {
     <box width={width} height={height} backgroundColor={T.bg} flexDirection="column" alignItems="center" justifyContent="center">
       <box width={bw} height={bh} border borderStyle="rounded" borderColor={T.focus} title=" docker-dash " titleAlignment="center" flexDirection="column" paddingX={1}>
         <text> </text>
-        <text style={{ fg: T.text, bold: true }}>{pad("Qual motor de containers você quer gerenciar?", inner)}</text>
+        <text style={{ fg: T.text, bold: true }}>{pad("Which container engine do you want to manage?", inner)}</text>
         <text> </text>
         {OPTIONS.map((o, i) => {
           const info = infos?.find((x) => x.engine === o.engine)
           const cur = i === sel
           const [icon, color, status] = !infos
-            ? ["…", T.muted, "detectando…"]
+            ? ["…", T.muted, "detecting…"]
             : !info?.installed
-            ? ["✕", T.red, "não instalado"]
+            ? ["✕", T.red, "not installed"]
             : info.running
-            ? ["●", T.green, "rodando"]
-            : ["○", T.yellow, "parado"]
+            ? ["●", T.green, "running"]
+            : ["○", T.yellow, "stopped"]
           return (
             <box key={o.engine} flexDirection="column">
               <text style={cur ? { bg: T.selBg } : undefined}>
@@ -109,16 +109,16 @@ function EnginePicker({ detect, preferred, onPick, onExit }) {
         <box flexGrow={1} />
         <text>
           <span style={{ fg: T.cyan, bold: true }}> enter</span>
-          <span style={{ fg: T.muted }}> abrir  </span>
+          <span style={{ fg: T.muted }}> open  </span>
           <span style={{ fg: T.cyan, bold: true }}>d/p</span>
           <span style={{ fg: T.muted }}> docker/podman  </span>
           <span style={{ fg: T.cyan, bold: true }}>r</span>
-          <span style={{ fg: T.muted }}> detectar de novo  </span>
+          <span style={{ fg: T.muted }}> detect again  </span>
           <span style={{ fg: T.cyan, bold: true }}>q</span>
-          <span style={{ fg: T.muted }}> sair</span>
+          <span style={{ fg: T.muted }}> quit</span>
         </text>
       </box>
-      <text style={{ fg: T.dim }}>{"dica: docker-dash --docker ou --podman pula esta tela"}</text>
+      <text style={{ fg: T.dim }}>{"tip: docker-dash --docker or --podman skips this screen"}</text>
     </box>
   )
 }

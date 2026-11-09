@@ -1,106 +1,110 @@
 # docker-dash
 
-Dashboard de terminal para **Docker (via Colima)** e **Podman (via podman machine)**, feito com
-[Gridland](https://github.com/thoughtfulllc/gridland). Mostra containers, estatísticas ao vivo, logs, imagens,
-volumes e uso de disco, executa os comandos do dia a dia com uma tecla e faz uma limpeza completa para liberar espaço.
+Terminal dashboard for **Docker (via Colima)** and **Podman (via podman machine)**, built with
+[Gridland](https://github.com/thoughtfulllc/gridland). It shows containers, live stats, logs, images,
+volumes and disk usage, runs everyday commands with a single key, and does a full cleanup to free up space.
 
-## Instalação
+![Containers tab: list with live CPU/memory, details and logs of the selected container](screenshots/01.png)
 
-Você precisa de pelo menos um dos motores instalado: `brew install colima docker` ou `brew install podman`. Depois, rode:
+![System tab: Colima profiles, total usage, top consumers and Docker disk usage](screenshots/02.png)
+
+## Installation
+
+You need at least one of the engines installed: `brew install colima docker` or `brew install podman`. Then run:
 
 ```bash
-./install.sh          # ou dê duplo clique em install.command no Finder
+./install.sh          # or double-click install.command in Finder
 ```
 
-O instalador:
-1. instala o [Bun](https://bun.sh), se ainda não existir (ele só é usado para compilar);
-2. compila um **binário único**, que roda sem Bun nem Node;
-3. copia o binário para `~/.local/bin/docker-dash` e adiciona essa pasta ao PATH no `~/.zshrc`.
+The installer:
+1. installs [Bun](https://bun.sh) if it isn't there yet (it's only used to compile);
+2. compiles a **single binary** that runs without Bun or Node;
+3. copies the binary to `~/.local/bin/docker-dash` and adds that folder to the PATH in `~/.zshrc`.
 
-Em seguida, abra um terminal novo e digite:
+Then open a new terminal and type:
 
 ```bash
-docker-dash            # abre com o último motor escolhido; na 1ª vez, mostra a tela de escolha
-docker-dash --docker   # direto no Docker + Colima
-docker-dash --podman   # direto no Podman
-docker-dash --mock     # dados simulados (combine com --docker/--podman)
+docker-dash            # opens with the last chosen engine; the first time, shows the engine picker
+docker-dash --docker   # straight into Docker + Colima
+docker-dash --podman   # straight into Podman
+docker-dash --mock     # mock data (combine with --docker/--podman)
 docker-dash --help
 ```
 
-A última escolha fica salva em `~/.config/docker-dash/config.json` e é usada direto nas próximas vezes (sem perguntar).
-Para fixar um motor, use `export DOCKER_DASH_ENGINE=podman`. Dentro do app, `E` volta para a tela de escolha.
+The last choice is saved in `~/.config/docker-dash/config.json` and used directly next time (without asking).
+To pin an engine, use `export DOCKER_DASH_ENGINE=podman`. Inside the app, `E` goes back to the engine picker.
 
-Para atualizar depois de mudar o código, rode `./install.sh` de novo. Para remover, use `./uninstall.sh`.
-Para instalar em outro lugar: `PREFIX=/usr/local ./install.sh` (o binário vai para `/usr/local/bin`).
+To update after changing the code, run `./install.sh` again. To remove it, use `./uninstall.sh`.
+To install somewhere else: `PREFIX=/usr/local ./install.sh` (the binary goes to `/usr/local/bin`).
 
-## Desenvolvimento
+## Development
 
 ```bash
 bun install
-bun start            # roda direto do código-fonte
-bun run mock         # dados simulados
-bun run compile      # só gera build/docker-dash, sem instalar
+bun start            # runs straight from source
+bun run mock         # mock data
+bun run compile      # only builds build/docker-dash, without installing
 ```
 
-## O que tem
+## Features
 
-**1 · Containers**: lista com estado, CPU, memória, portas e status. Ao lado ficam os detalhes do container
-selecionado: comando, redes, mounts, portas, sparklines de CPU e memória, rede e disco, além das últimas linhas de log.
+**1 · Containers**: list with state, CPU, memory, ports and status. Next to it are the details of the selected
+container: command, networks, mounts, ports, CPU and memory, network and disk sparklines, plus the latest log lines.
 
-| tecla | ação |
+| key | action |
 |---|---|
 | `s` | start / stop |
 | `r` | restart |
 | `p` | pause / unpause |
-| `d` | remover (pede confirmação; força se estiver rodando) |
-| `l` | logs em tela cheia (↑↓ pgup/pgdn rolam, `f` volta a seguir) |
-| `e` | copia `docker exec -it <nome> sh` para o clipboard |
-| `o` | abre `http://localhost:<porta>` no navegador |
-| `a` | alterna entre todos os containers e só os que estão rodando |
+| `d` | remove (asks for confirmation; forces it if running) |
+| `l` | full-screen logs (↑↓ pgup/pgdn scroll, `f` resumes following) |
+| `e` | copies `docker exec -it <name> sh` to the clipboard |
+| `o` | opens `http://localhost:<port>` in the browser |
+| `a` | toggles between all containers and only running ones |
 
-**2 · Imagens**: tamanho, idade e quantos containers usam cada imagem. `n` faz pull, `d` remove e `P` limpa as `<none>`.
+**2 · Images**: size, age and how many containers use each image. `n` pulls, `d` removes and `P` cleans up `<none>` images.
 
-**3 · Volumes**: mostra quais containers usam cada volume. `d` remove, `P` remove os não usados.
+**3 · Volumes**: shows which containers use each volume. `d` removes, `P` removes unused ones.
 
-**4 · Sistema**: perfis do Colima ou máquinas do Podman (CPU, RAM, disco, runtime), uso total de CPU e RAM da VM, maiores
-consumidores e `docker system df`. `S` start, `X` stop, `R` restart da VM, `P` system prune, `B` limpa o build cache.
+**4 · System**: Colima profiles or Podman machines (CPU, RAM, disk, runtime), total machine CPU and RAM usage, top
+consumers and `docker system df`. `S` start, `X` stop, `R` restart the machine, `P` system prune, `B` clears the build cache.
 
-**Limpeza (`C`)**: abre um painel com tudo que dá para apagar e uma estimativa do espaço de cada item:
+**Cleanup (`C`)**: opens a panel with everything that can be deleted and an estimate of the space for each item:
 
-| item | comando | padrão |
+| item | command | default |
 |---|---|---|
-| Containers parados | `container prune` | ✓ |
-| Imagens `<none>` | `image prune` | ✓ |
-| Imagens sem nenhum container | `image prune -a` | |
-| Redes não usadas | `network prune` | ✓ |
-| Build cache (só Docker) | `builder prune -a` | ✓ |
-| Volumes sem container (**apaga dados**) | `volume prune -a` | |
+| Stopped containers | `container prune` | ✓ |
+| `<none>` images | `image prune` | ✓ |
+| Images with no containers | `image prune -a` | |
+| Unused networks | `network prune` | ✓ |
+| Build cache (Docker only) | `builder prune -a` | ✓ |
+| Volumes with no container (**deletes data**) | `volume prune -a` | |
 
-`espaço` marca ou desmarca, `a` marca tudo que é seguro e `enter` executa as etapas em sequência. No fim,
-o painel mostra quanto espaço foi liberado de verdade, comparando o `system df` de antes e de depois.
+`space` checks or unchecks, `a` checks everything that's safe and `enter` runs the steps in sequence. At the end,
+the panel shows how much space was actually freed, comparing `system df` before and after.
 
-**Geral**: `1`–`4`/`tab` trocam de aba, `C` abre a limpeza, `E` troca de motor, `/` filtra, `u` atualiza, `?` abre a ajuda e `q` sai.
+**General**: `1`–`4`/`tab` switch tabs, `C` opens cleanup, `E` switches engine, `/` filters, `u` refreshes, `?` opens help and `q` quits.
 
-Ações destrutivas (remover, prune, parar o Colima) sempre pedem confirmação.
+Destructive actions (remove, prune, stopping Colima) always ask for confirmation.
 
-## Como funciona
+## How it works
 
 ```
 src/
-├── cli.tsx              entrada (terminal): flags, config, escolhe o backend
-├── Root.tsx             tela de escolha do motor → dashboard
-├── DockerDash.tsx       UI: abas, tabelas, detalhes, modais, limpeza, teclado
-├── useDashData.ts       polling: containers 2s, stats 2.5s, colima 5s, imagens/volumes/disco 15s
+├── cli.tsx              entry point (terminal): flags, config, picks the backend
+├── Root.tsx             engine picker → dashboard
+├── DockerDash.tsx       UI: tabs, tables, details, modals, cleanup, keyboard
+├── useDashData.ts       polling: containers 2s, stats 2.5s, colima 5s, images/volumes/disk 15s
 ├── backend/
-│   ├── types.ts         interface Backend
-│   ├── exec.ts          execFile, parsing de JSON, detecção dos motores
+│   ├── types.ts         Backend interface
+│   ├── exec.ts          execFile, JSON parsing, engine detection
 │   ├── docker.ts        `docker ... --format '{{json .}}'` + `colima list --json`
-│   ├── podman.ts        `podman ... --format json` + `podman machine list` (converte o JSON do Podman)
-│   └── mock.ts          backend falso
-└── lib/format.ts        bytes, portas, sparklines, tabelas
+│   ├── podman.ts        `podman ... --format json` + `podman machine list` (converts Podman's JSON)
+│   └── mock.ts          fake backend
+└── lib/format.ts        bytes, ports, sparklines, tables
 ```
 
-Os comandos são executados com `execFile` e os argumentos vão num array, sem shell. O Docker usa o contexto
-ativo; com o Colima rodando, ele já aponta para o socket do Colima.
+Commands are run with `execFile` and the arguments go in an array, with no shell. Docker uses the active
+context; with Colima running, it already points to Colima's socket.
 
-`bun run preview` abre a mesma UI no navegador, com dados simulados.
+`bun run preview` opens the same UI in the browser, with mock data.

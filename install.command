@@ -1,6 +1,6 @@
 #!/bin/bash
-# Duplo clique no Finder para instalar o comando docker-dash.
+# Double-click in Finder to install the docker-dash command.
 cd "$(dirname "$0")"
 ./install.sh
 echo
-read -n 1 -s -r -p "Pressione qualquer tecla para fechar..."
+read -n 1 -s -r -p "Press any key to close..."

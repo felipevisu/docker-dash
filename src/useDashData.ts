@@ -1,9 +1,9 @@
-// Coleta periódica dos dados (polling) com proteção contra chamadas sobrepostas.
-// Containers/estatísticas a cada 2-3s, Colima a cada 5s, imagens/volumes/disco a cada 15s.
+// Periodic data polling with protection against overlapping calls.
+// Containers/stats every 2-3s, Colima every 5s, images/volumes/disk every 15s.
 import { useEffect, useRef, useState, useCallback } from "react"
 import type { Backend, Machine, Container, Image, Stat, Volume, DiskUsage } from "./backend/types"
 
-export const HISTORY = 90 // amostras guardadas por container (~4 min)
+export const HISTORY = 90 // samples kept per container (~4 min)
 
 export interface DashData {
   profiles: Machine[]
@@ -104,7 +104,7 @@ export function useDashData(backend: Backend) {
     return () => timers.forEach(clearInterval)
   }, [refreshAll, loadContainers, loadStats, loadMachines, loadSlow])
 
-  /** estatística de um container pelo ID (docker stats usa o ID curto) */
+  /** a container's stats by ID (docker stats uses the short ID) */
   const statFor = (id: string): Stat | undefined => d.stats[id] ?? d.stats[id?.slice(0, 12)]
   const histFor = (id: string) => d.hist[id] ?? d.hist[id?.slice(0, 12)] ?? { cpu: [], mem: [] }
 

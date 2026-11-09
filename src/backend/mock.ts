@@ -1,5 +1,5 @@
-// Backend simulado: dados falsos que mudam com o tempo. Útil para testar a UI sem Docker
-// (bun run src/cli.tsx --mock) e para o preview no navegador.
+// Mock backend: fake data that changes over time. Useful for testing the UI without Docker
+// (bun run src/cli.tsx --mock) and for the browser preview.
 import type { Backend, Container, Image, Stat, Volume, Machine, Engine, EngineInfo } from "./types"
 
 const GiB = 1024 ** 3
@@ -27,8 +27,8 @@ const LOG_TEMPLATES: Record<string, string[]> = {
     "INFO  GET /api/users/42 200 11ms",
     "ERROR upstream timeout calling payments-svc",
     "\x1b[31mError [TransformError]: Transform failed with 1 error:\x1b[39m",
-    "\x1b[2K\x1b[1G\x1b[36m42\x1b[0m \x1b[3A progresso 42%\r100% ✅ concluído 🚀",
-    '{"level":"info","time":"2026-10-30T13:03:12.862Z","service":"chat","env":"dev","msg":"mensagem recebida 你好 \t tab"}',
+    "\x1b[2K\x1b[1G\x1b[36m42\x1b[0m \x1b[3A progress 42%\r100% ✅ done 🚀",
+    '{"level":"info","time":"2026-10-30T13:03:12.862Z","service":"chat","env":"dev","msg":"message received 你好 \t tab"}',
   ],
   web: [
     "GET / 200 3.1ms",
@@ -73,7 +73,7 @@ export function mockBackend(engine: Engine = "docker"): Backend {
   ]
   const profiles: Machine[] = podman
     ? [
-        { name: "podman-machine-default", status: "Running", arch: "aarch64", cpus: 5, memory: 4 * GiB, disk: 100 * GiB, runtime: "podman · applehv · padrão", address: "ssh :52345" },
+        { name: "podman-machine-default", status: "Running", arch: "aarch64", cpus: 5, memory: 4 * GiB, disk: 100 * GiB, runtime: "podman · applehv · default", address: "ssh :52345" },
         { name: "rootful", status: "Stopped", arch: "aarch64", cpus: 2, memory: 2 * GiB, disk: 60 * GiB, runtime: "podman · applehv", address: "" },
       ]
     : [
@@ -204,7 +204,7 @@ export function mockBackend(engine: Engine = "docker"): Backend {
     },
     async prune(kind) {
       await sleep(700)
-      if (kind === "builder" && podman) throw new Error(`"builder prune" não existe no Podman`)
+      if (kind === "builder" && podman) throw new Error(`"builder prune" doesn't exist in Podman`)
       if (kind === "containers" || kind === "system") {
         for (const c of containers.filter((c) => c.state === "exited")) containers.splice(containers.indexOf(c), 1)
       }
@@ -213,7 +213,7 @@ export function mockBackend(engine: Engine = "docker"): Backend {
       if (kind === "volumes") volumes = volumes.filter(volInUse)
       if (kind === "networks" || kind === "system") networks = 3
       if (kind === "builder" || kind === "system") buildCache = 0
-      return "Total reclaimed space: (simulado)"
+      return "Total reclaimed space: (mock)"
     },
     async pull(ref) {
       await sleep(1500)
@@ -232,11 +232,11 @@ export function mockBackend(engine: Engine = "docker"): Backend {
   }
 }
 
-/** detecção simulada para a tela de escolha no modo demo */
+/** mock detection for the picker screen in demo mode */
 export async function mockDetect(): Promise<EngineInfo[]> {
   await sleep(400)
   return [
-    { engine: "docker", installed: true, running: true, version: "27.3.1", detail: "servidor 27.3.1 (simulado)" },
-    { engine: "podman", installed: true, running: true, version: "5.3.1", detail: "máquina podman-machine-default rodando (simulado)" },
+    { engine: "docker", installed: true, running: true, version: "27.3.1", detail: "server 27.3.1 (mock)" },
+    { engine: "podman", installed: true, running: true, version: "5.3.1", detail: "machine podman-machine-default running (mock)" },
   ]
 }

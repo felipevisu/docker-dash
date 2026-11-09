@@ -1,10 +1,10 @@
-// Contrato entre a UI e quem fala com o motor de containers.
-// `docker.ts` (Docker + Colima) e `podman.ts` (Podman + podman machine) usam os CLIs reais;
-// `mock.ts` simula tudo (para testar sem nenhum dos dois).
+// Contract between the UI and whatever talks to the container engine.
+// `docker.ts` (Docker + Colima) and `podman.ts` (Podman + podman machine) use the real CLIs;
+// `mock.ts` fakes everything (to test without either).
 
 export type Engine = "docker" | "podman"
 
-/** Informações de detecção mostradas na tela de escolha do motor */
+/** Detection info shown on the engine picker screen */
 export interface EngineInfo {
   engine: Engine
   installed: boolean
@@ -34,14 +34,14 @@ export interface Container {
   command: string
   createdAt: string
   networks: string
-  mounts: string // nomes de volumes/caminhos separados por vírgula
-  /** código de saída quando parado ("Exited (255)" → 255) */
+  mounts: string // comma-separated volume names/paths
+  /** exit code when stopped ("Exited (255)" → 255) */
   exitCode?: number | null
-  /** projeto do docker compose, se houver */
+  /** docker compose project, if any */
   project?: string
 }
 
-/** resultado de remoções explícitas, item a item */
+/** result of explicit removals, item by item */
 export interface RemoveResult { removed: string[]; failed: { id: string; error: string }[] }
 
 export interface Stat {
@@ -70,7 +70,7 @@ export interface Volume {
   name: string
   driver: string
   mountpoint: string
-  /** containers que usam o volume, quando o backend sabe informar diretamente */
+  /** containers using the volume, when the backend can tell directly */
   users?: string[]
 }
 
@@ -88,12 +88,12 @@ export type MachineAction = "start" | "stop" | "restart"
 
 export interface Backend {
   engine: Engine
-  /** nome do gerenciador da VM: "colima" ou "podman machine" */
+  /** VM manager name: "colima" or "podman machine" */
   vmName: string
-  /** CLI usada nos comandos sugeridos (docker exec / podman exec) */
+  /** CLI used in suggested commands (docker exec / podman exec) */
   cli: string
   mock?: boolean
-  /** ações que este motor não suporta (a UI esconde os atalhos) */
+  /** actions this engine doesn't support (the UI hides their shortcuts) */
   unsupported?: PruneKind[]
   machines(): Promise<Machine[]>
   containers(): Promise<Container[]>
@@ -104,9 +104,9 @@ export interface Backend {
   logs(id: string, tail: number): Promise<string[]>
   containerAction(action: ContainerAction, id: string): Promise<string>
   removeImage(id: string): Promise<string>
-  /** remove exatamente estes containers, um a um, SEM forçar (container rodando falha em vez de ser parado) */
+  /** removes exactly these containers, one by one, WITHOUT force (a running container fails instead of being stopped) */
   removeContainers(ids: string[]): Promise<RemoveResult>
-  /** remove exatamente estas imagens, SEM forçar (imagem em uso falha) */
+  /** removes exactly these images, WITHOUT force (an image in use fails) */
   removeImages(ids: string[]): Promise<RemoveResult>
   removeVolume(name: string): Promise<string>
   prune(kind: PruneKind): Promise<string>

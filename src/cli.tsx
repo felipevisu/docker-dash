@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // @ts-nocheck
-// Entrada do terminal (e do binário compilado `docker-dash`).
+// Terminal entry point (and of the compiled `docker-dash` binary).
 import pkg from "../package.json"
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs"
 import { join } from "node:path"
@@ -9,17 +9,17 @@ const args = process.argv.slice(2)
 
 if (args.includes("-h") || args.includes("--help")) {
   console.log(`docker-dash ${pkg.version}
-Dashboard de terminal para Docker (Colima) e Podman.
+Terminal dashboard for Docker (Colima) and Podman.
 
-Uso:
-  docker-dash                 abre com o último motor escolhido (ou a tela de escolha)
-  docker-dash --docker        abre direto com Docker + Colima
-  docker-dash --podman        abre direto com Podman + podman machine
-  docker-dash --mock          dados simulados (combine com --docker/--podman)
-  docker-dash --version       mostra a versão
+Usage:
+  docker-dash                 opens with the last chosen engine (or the engine picker)
+  docker-dash --docker        opens straight into Docker + Colima
+  docker-dash --podman        opens straight into Podman + podman machine
+  docker-dash --mock          mock data (combine with --docker/--podman)
+  docker-dash --version       shows the version
 
-Também dá para fixar o motor com a variável DOCKER_DASH_ENGINE=docker|podman.
-Dentro do app: ? mostra os atalhos, C abre a limpeza, E troca de motor.`)
+You can also pin the engine with DOCKER_DASH_ENGINE=docker|podman.
+Inside the app: ? shows shortcuts, C opens cleanup, E switches engine.`)
   process.exit(0)
 }
 if (args.includes("-v") || args.includes("--version")) {
@@ -27,22 +27,22 @@ if (args.includes("-v") || args.includes("--version")) {
   process.exit(0)
 }
 
-// O binário pode ser aberto de lugares onde o PATH não tem o Homebrew.
+// The binary may be launched from places where PATH lacks Homebrew.
 const extra = ["/opt/homebrew/bin", "/usr/local/bin", `${process.env.HOME}/.local/bin`]
 const path = (process.env.PATH ?? "").split(":")
 process.env.PATH = [...path, ...extra.filter((p) => !path.includes(p))].join(":")
 
-// motor escolhido por flag/variável
+// engine chosen via flag/env var
 const engineArg = args.find((a) => a.startsWith("--engine="))?.split("=")[1]
 const fromFlag = args.includes("--podman") ? "podman" : args.includes("--docker") ? "docker" : engineArg ?? process.env.DOCKER_DASH_ENGINE
 const valid = (e) => (e === "docker" || e === "podman" ? e : null)
 
-// lembra a última escolha para pré-selecionar na próxima vez
+// remember the last choice to preselect it next time
 const configDir = join(process.env.HOME ?? ".", ".config", "docker-dash")
 const configFile = join(configDir, "config.json")
 let lastEngine = null
 try { lastEngine = JSON.parse(readFileSync(configFile, "utf8")).engine ?? null } catch {}
-// flag/variável > última escolha salva > tela de escolha (E no app reabre a escolha)
+// flag/env var > last saved choice > engine picker (E in the app reopens the picker)
 const initialEngine = valid(fromFlag) ?? valid(lastEngine)
 const saveEngine = (engine) => {
   try {
